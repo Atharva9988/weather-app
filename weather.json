@@ -1,0 +1,17 @@
+[
+    {
+        "city": "Mumbai",
+        "temperature": 28.53,
+        "description": "overcast clouds"
+    },
+    {
+        "city": "Delhi",
+        "temperature": 36.83,
+        "description": "overcast clouds"
+    },
+    {
+        "city": "Bengaluru",
+        "temperature": 27.55,
+        "description": "overcast clouds"
+    }
+]
