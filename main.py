@@ -6,16 +6,17 @@ from pathlib import Path
 import httpx
 from dotenv import load_dotenv
 
-# Load the .env file
+# Load environment variables
 load_dotenv(Path(__file__).parent / ".env")
 
-# Read the API key
 API_KEY = os.getenv("OPENWEATHER_API_KEY")
 
 BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
 
 
-async def fetch_weather(city):
+async def fetch_weather(city: str):
+    """Fetch weather data for a single city."""
+
     params = {
         "q": city,
         "appid": API_KEY,
@@ -24,41 +25,49 @@ async def fetch_weather(city):
 
     async with httpx.AsyncClient() as client:
         response = await client.get(BASE_URL, params=params)
-        response.raise_for_status()
+
+        if response.status_code != 200:
+            return None
 
         data = response.json()
 
         return {
             "city": data["name"],
             "temperature": data["main"]["temp"],
-            "description": data["weather"][0]["description"]
+            "description": data["weather"][0]["description"].title()
         }
 
 
-async def main():
+async def get_weather(city: str):
+    """Main weather function."""
+
     if not API_KEY:
-        print("❌ API_KEY not found in .env")
-        return
+        raise ValueError("OPENWEATHER_API_KEY not found in .env")
 
-    cities = ["Mumbai", "Delhi", "Bangalore"]
+    weather = await fetch_weather(city)
 
-    results = await asyncio.gather(
-        *(fetch_weather(city) for city in cities)
-    )
+    if weather is None:
+        raise ValueError("City not found.")
 
+    # Save to JSON
     with open("weather.json", "w") as file:
-        json.dump(results, file, indent=4)
+        json.dump(weather, file, indent=4)
 
-    print("\nWeather Report")
-    print("-" * 30)
-
-    for result in results:
-        print(
-            f"{result['city']}: "
-            f"{result['temperature']}°C, "
-            f"{result['description']}"
-        )
+    return weather
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+
+    city = input("Enter city: ")
+
+    try:
+        weather = asyncio.run(get_weather(city))
+
+        print("\nWeather Information")
+        print("-------------------")
+        print(f"City        : {weather['city']}")
+        print(f"Temperature : {weather['temperature']}°C")
+        print(f"Description : {weather['description']}")
+
+    except Exception as e:
+        print(f"❌ {e}")
